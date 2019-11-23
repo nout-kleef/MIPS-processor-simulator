@@ -6,3 +6,5 @@
 
 # executables
 mipssim
+src/marker/mark
+src/marker/states.txt
