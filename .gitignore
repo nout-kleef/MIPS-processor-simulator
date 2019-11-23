@@ -3,3 +3,6 @@
 
 # VS Code specific stuff
 .vscode/
+
+# executables
+mipssim
