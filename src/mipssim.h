@@ -100,12 +100,16 @@ void memory_write(int address, int write_data);
 ////////////////////////////////////////////////////////////////
 /// Marking Functions --> Do not (re)move those functions
 ////////////////////////////////////////////////////////////////
-// ! ! ! TODO: UNCOMMENT THESE BEFORE SUBMITTING ! ! !
-// static inline void marking_after_clock_cycle() {}
-// static inline void marking_at_the_end() {}
-// ! ! ! REMOVE THESE BEFORE SUBMITTING ! ! !
+#define RUN_MARKER false
+#if RUN_MARKER
 static inline void marking_after_clock_cycle();
 static inline void marking_at_the_end();
+#else
+static inline void marking_after_clock_cycle()
+{
+}
+static inline void marking_at_the_end() {}
+#endif
 
 static inline void instruction_parser(uint32_t *memory, char *instr_file_path,
                                       uint32_t *registers, char *reg_file_path)
