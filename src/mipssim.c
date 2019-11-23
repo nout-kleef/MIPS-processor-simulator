@@ -10,6 +10,8 @@
 // extend instruction types specified in mipssim.h
 #define I_TYPE 2
 #define J_TYPE 3
+#define MEM_TYPE 4
+#define BRANCH_TYPE 5
 
 #define BREAK_POINT 200000 // exit after so many cycles -- useful for debugging
 
@@ -30,11 +32,11 @@ static inline uint8_t get_instruction_type(int opcode)
     case ADDI:
         return I_TYPE;
     case LW:
-        return I_TYPE;
+        return MEM_TYPE;
     case SW:
-        return I_TYPE;
+        return MEM_TYPE;
     case BEQ:
-        return I_TYPE;
+        return BRANCH_TYPE;
     case J:
         return J_TYPE;
     case SLT:
@@ -74,12 +76,57 @@ void FSM()
         control->ALUSrcA = 0;
         control->ALUSrcB = 3;
         control->ALUOp = 0;
-        if (IR_meta->type == R_TYPE)
+        switch (IR_meta->type)
+        {
+        case R_TYPE:
             state = EXEC;
-        else if (opcode == EOP)
+            break;
+        case J_TYPE:
+            state = JUMP_COMPL;
+            break;
+        case MEM_TYPE:
+            state = MEM_ADDR_COMP;
+            break;
+        case BRANCH_TYPE:
+            state = BRANCH_COMPL;
+            break;
+        case EOP:
             state = EXIT_STATE;
-        else
+            break;
+        default:
             assert(false);
+        }
+        break;
+    case MEM_ADDR_COMP:
+        control->ALUSrcA = 1;
+        control->ALUSrcB = 2;
+        control->ALUOp = 0;
+        switch (opcode)
+        {
+        case LW:
+            state = MEM_ACCESS_LD;
+            break;
+        case SW:
+            state = MEM_ACCESS_ST;
+            break;
+        default:
+            assert(false);
+        }
+        break;
+    case MEM_ACCESS_LD:
+        control->MemRead = 1;
+        control->IorD = 1;
+        state = WB_STEP;
+        break;
+    case MEM_ACCESS_ST:
+        control->MemWrite = 1;
+        control->IorD = 1;
+        state = INSTR_FETCH;
+        break;
+    case WB_STEP:
+        control->RegDst = 0;
+        control->RegWrite = 1;
+        control->MemtoReg = 1;
         break;
     case EXEC:
         control->ALUSrcA = 1;
@@ -91,6 +138,19 @@ void FSM()
         control->RegDst = 1;
         control->RegWrite = 1;
         control->MemtoReg = 0;
+        state = INSTR_FETCH;
+        break;
+    case BRANCH_COMPL:
+        control->ALUSrcA = 1;
+        control->ALUSrcB = 0;
+        control->ALUOp = 1;
+        control->PCWriteCond = 1;
+        control->PCSource = 1;
+        state = INSTR_FETCH;
+        break;
+    case JUMP_COMPL:
+        control->PCWrite = 1;
+        control->PCSource = 2;
         state = INSTR_FETCH;
         break;
     default:
@@ -206,11 +266,38 @@ void set_up_IR_meta(int IR, struct instr_meta *IR_meta)
     switch (IR_meta->opcode)
     {
     case SPECIAL:
-        if (IR_meta->function == ADD)
+        switch (IR_meta->function)
+        {
+        case ADD:
             printf("Executing ADD(%d), $%u = $%u + $%u (function: %u) \n",
                    IR_meta->opcode, IR_meta->reg_11_15, IR_meta->reg_21_25, IR_meta->reg_16_20, IR_meta->function);
-        else
+            break;
+        case SLT:
+            printf("Executing SLT(%d), $%u = $%u + $%u (function: %u) \n",
+                   IR_meta->opcode, IR_meta->reg_11_15, IR_meta->reg_21_25, IR_meta->reg_16_20, IR_meta->function);
+            break;
+        default:
             assert(false);
+        }
+        break;
+    case ADDI:
+        printf("Executing ADDI(%d), $%u = $%u + %d\n",
+               IR_meta->opcode, IR_meta->reg_16_20, IR_meta->reg_21_25, IR_meta->immediate);
+        break;
+    case LW:
+        printf("Executing LW(%d), $%u = %d($%u) (%u) \n",
+               IR_meta->opcode, IR_meta->reg_16_20, IR_meta->immediate, IR_meta->reg_21_25, IR_meta->immediate + IR_meta->reg_21_25);
+        break;
+    case SW:
+        printf("Executing SW(%d), %d($%u) (%u) = $%u \n",
+               IR_meta->opcode, IR_meta->immediate, IR_meta->reg_21_25, IR_meta->immediate + IR_meta->reg_21_25, IR_meta->reg_16_20);
+        break;
+    case BEQ:
+        printf("Executing BEQ(%d), $%u == $%u \n--> %d\nelse -->  %d\n",
+               IR_meta->opcode, IR_meta->reg_21_25, IR_meta->reg_16_20, arch_state.curr_pipe_regs.pc + (IR_meta->immediate << 2), arch_state.next_pipe_regs.pc);
+        break;
+    case J:
+        printf("Executing J(%d), $pc = %u", IR_meta->opcode, ((arch_state.curr_pipe_regs.pc >> 28) << 28) + (IR_meta->jmp_offset << 2));
         break;
     case EOP:
         printf("Executing EOP(%d) \n", IR_meta->opcode);
