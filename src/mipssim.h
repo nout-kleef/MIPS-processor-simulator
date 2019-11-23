@@ -100,7 +100,7 @@ void memory_write(int address, int write_data);
 ////////////////////////////////////////////////////////////////
 /// Marking Functions --> Do not (re)move those functions
 ////////////////////////////////////////////////////////////////
-#define RUN_MARKER false
+#define RUN_MARKER true
 #if RUN_MARKER
 static inline void marking_after_clock_cycle();
 static inline void marking_at_the_end();

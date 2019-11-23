@@ -44,14 +44,47 @@ char *get_state_name(const int state)
     }
 }
 
-void dump_arch_state()
+char *get_instr_type_name(struct instr_meta IR)
+{
+    switch (IR.opcode)
+    {
+    case 0:
+        switch (IR.function)
+        {
+        case 32:
+            return "SPECIAL/ADD";
+        default:
+            assert(false);
+        }
+    case 32:
+        return "ADD";
+    case 8:
+        return "ADDI";
+    case 35:
+        return "LW";
+    case 43:
+        return "SW";
+    case 4:
+        return "BEQ";
+    case 2:
+        return "J";
+    case 42:
+        return "SLT";
+    case 63:
+        return "EOP";
+    default:
+        assert(false);
+    }
+}
+
+void dump_arch_state(bool dump_memory)
 {
     fprintf(fp, "\n*** CYCLE #%u START ***\n", (unsigned int)arch_state.clock_cycle);
     fprintf(fp,
             "state:\t\t\t\t\t%s\n"
             "clock cycle\t\t\t\t%u\n"
             "instruction\t\t\t\t%u\n"
-            "|\topcode (31-26)\t\t%d\n"
+            "|\topcode (31-26)\t\t%d - %s\n"
             "|\tjmp (25-0)\t\t\t%d\n"
             "|\t|\t$rs (25-21)\t\t%d\n"
             "|\t|\t$rt (20-16)\t\t%d\n"
@@ -62,6 +95,7 @@ void dump_arch_state()
             (unsigned int)arch_state.clock_cycle,
             (unsigned int)arch_state.IR_meta.instr,
             arch_state.IR_meta.opcode,
+            get_instr_type_name(arch_state.IR_meta),
             arch_state.IR_meta.jmp_offset,
             arch_state.IR_meta.reg_21_25,
             arch_state.IR_meta.reg_16_20,
@@ -96,6 +130,28 @@ void dump_arch_state()
             arch_state.curr_pipe_regs.B,
             arch_state.curr_pipe_regs.ALUOut,
             arch_state.curr_pipe_regs.MDR);
+    // memory
+    if (dump_memory)
+    {
+        fprintf(fp, "memory (only non-zero values)\n");
+        bool instr_mem = true; // first word is always an instruction
+        for (int i = 0; i < MEMORY_WORD_NUM; ++i)
+        {
+            if (arch_state.memory[i] != 0)
+            {
+                // has been altered
+                fprintf(fp,
+                        "|\taddr %d(0)\t\t\t%d (%s)\n",
+                        4 * i,
+                        arch_state.memory[i],
+                        instr_mem ? "instr" : "data");
+            }
+            if (arch_state.memory[i] >= 4227858432)
+            { // triggered by "11111100..." (EOP)
+                instr_mem = false;
+            }
+        }
+    }
     fprintf(fp, "*** CYCLE ENDED ***\n\n");
 }
 
@@ -108,12 +164,12 @@ static inline void marking_after_clock_cycle()
         fprintf(fp, "file opened. starting marking process..\n"
                     "#######################################\n\n");
     }
-    dump_arch_state();
+    dump_arch_state(false);
     first_dump = false;
 }
 
 static inline void marking_at_the_end()
 {
-    dump_arch_state();
+    dump_arch_state(true);
     fclose(fp);
 }
