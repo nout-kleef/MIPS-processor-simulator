@@ -1,0 +1,5 @@
+# compressed files
+*.tar
+
+# VS Code specific stuff
+.vscode/
