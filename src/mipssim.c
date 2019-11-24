@@ -176,7 +176,7 @@ void FSM()
         // update control
         arch_state.control.ALUSrcA = 1; // pipe reg A ($rs)
         arch_state.control.ALUSrcB = 2; // (sign extended) immediate
-        arch_state.control.ALUOp = 2;   // add - TODO ???
+        arch_state.control.ALUOp = 0;   // add - TODO ???
         // update state
         state = I_TYPE_COMPL;
         break;
@@ -238,10 +238,23 @@ void execute()
     struct pipe_regs *curr_pipe_regs = &arch_state.curr_pipe_regs;
     struct pipe_regs *next_pipe_regs = &arch_state.next_pipe_regs;
 
-    int alu_opA = control->ALUSrcA == 1 ? curr_pipe_regs->A : curr_pipe_regs->pc;
+    int alu_opA = 0;
     int alu_opB = 0;
     int immediate = IR_meta->immediate;
     int shifted_immediate = (immediate) << 2;
+    // ALUSrcA
+    switch (control->ALUSrcA)
+    {
+    case 0:
+        alu_opA = curr_pipe_regs->pc;
+        break;
+    case 1:
+        alu_opA = curr_pipe_regs->A;
+        break;
+    default:
+        assert(false && "invalid ALUSrcA");
+    }
+    // ALUSrcB
     switch (control->ALUSrcB)
     {
     case 0:
@@ -257,29 +270,48 @@ void execute()
         alu_opB = shifted_immediate;
         break;
     default:
-        assert(false);
+        assert(false && "invalid ALUSrcB");
     }
-
+    // ALUOp
     switch (control->ALUOp)
     {
-    case 0:
+    case 0: // addition
         next_pipe_regs->ALUOut = alu_opA + alu_opB;
         break;
-    case 2:
-        next_pipe_regs->ALUOut = alu_opA + alu_opB;
+    case 1: // subtraction
+        next_pipe_regs->ALUOut = alu_opA - alu_opB;
+    case 2: // R_TYPE ONLY!!
+        switch (IR_meta->function)
+        {
+        case ADD:
+            next_pipe_regs->ALUOut = alu_opA + alu_opB;
+            break;
+        case SLT:
+            next_pipe_regs->ALUOut = alu_opA < alu_opB ? 1 : 0; // TODO check this
+            break;
+        default:
+            assert(false && "invalid function-field for R_TYPE ALU execution");
+        }
         break;
     default:
-        assert(false);
+        assert(false && "invalid ALUOp");
     }
 
     // PC calculation
+    const int jmp = ((curr_pipe_regs->pc >> 28) << 28) + (IR_meta->jmp_offset << 2);
     switch (control->PCSource)
     {
-    case 0:
+    case 0: // INSTRUCTION_FETCH
         next_pipe_regs->pc = next_pipe_regs->ALUOut;
         break;
+    case 1:                                          // BRANCH_COMPL
+        next_pipe_regs->pc = curr_pipe_regs->ALUOut; // optimistically computed in DECODE
+        break;
+    case 2: // JUMP_COMPL
+        next_pipe_regs->pc = jmp;
+        break;
     default:
-        assert(false);
+        assert(false && "invalid PCSource");
     }
 }
 
