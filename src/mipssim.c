@@ -216,6 +216,7 @@ void instruction_fetch()
 {
     if (arch_state.control.MemRead)
     {
+        assert(arch_state.control.IorD == 0 && "IorD should be 0");
         int address = arch_state.curr_pipe_regs.pc;
         arch_state.next_pipe_regs.IR = memory_read(address);
     }
@@ -317,7 +318,19 @@ void execute()
 
 void memory_access()
 {
-    ///@students: appropriate calls to functions defined in memory_hierarchy.c must be added
+    assert(arch_state.control.IorD == 1 && "IorD should be 1 for LW/SW");
+    // read
+    if (arch_state.control.MemRead)
+    {
+        assert(!arch_state.control.MemWrite && "don't read and write simultaneously");
+        arch_state.next_pipe_regs.MDR = memory_read(arch_state.curr_pipe_regs.ALUOut);
+    }
+    // write
+    if (arch_state.control.MemWrite)
+    {
+        assert(!arch_state.control.MemRead && "don't read and write simultaneously");
+        memory_write(arch_state.curr_pipe_regs.ALUOut, arch_state.curr_pipe_regs.B);
+    }
 }
 
 void write_back()
