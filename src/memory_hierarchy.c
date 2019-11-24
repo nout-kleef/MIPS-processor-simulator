@@ -6,7 +6,24 @@ include any other library files                                         |
 |*************************************************************************************/
 #include "mipssim.h"
 
-/// @students: declare cache-related structures and variables here
+#define ADDR_SIZE 32   // size of any address in bits
+#define BLOCK_SIZE 16  // size of a cache block in bytes
+
+typedef struct {
+  uint8_t valid;  // (size: 1b)
+  int tag;        // (size: [tag_bits]b)
+  uint32_t data;  // (size: [ADDR_SIZE]b)
+} cache_entry;
+
+cache_entry* cache;
+
+void allocate_cache(const int NUM_BLOCKS) {
+  cache = malloc(sizeof(cache_entry) * NUM_BLOCKS);
+  // invalidate all entries
+  for (int i = 0; i < NUM_BLOCKS; ++i) {
+    cache[i].valid = 0;
+  }
+}
 
 void memory_state_init(struct architectural_state* arch_state_ptr) {
   arch_state_ptr->memory =
@@ -14,14 +31,28 @@ void memory_state_init(struct architectural_state* arch_state_ptr) {
   memset(arch_state_ptr->memory, 0, sizeof(uint32_t) * MEMORY_WORD_NUM);
   if (cache_size == 0) {
     // CACHE DISABLED
-    memory_stats_init(arch_state_ptr,
-                      0);  // WARNING: we initialize for no cache 0
+    memory_stats_init(arch_state_ptr, 0);  // WARNING: no cache --> 0
   } else {
     // CACHE ENABLED
-    assert(0);  /// @students: Remove assert(0); and initialize cache
-
-    /// @students: memory_stats_init(arch_state_ptr, X); <-- fill # of tag bits
-    /// for cache 'X' correctly
+    assert(cache_size % BLOCK_SIZE == 0 &&
+           "cache_size is not a multiple of BLOCK_SIZE");
+    const int NUM_BLOCKS = cache_size / BLOCK_SIZE;
+    int num_blocks = NUM_BLOCKS;
+    int block_size = BLOCK_SIZE;
+    int byte_offset_bits = 0;
+    int index_bits = 0;
+    while (block_size >>= 1) {
+      ++byte_offset_bits;
+    }
+    while (num_blocks >>= 1) {
+      ++index_bits;
+    }
+    int tag_bits = ADDR_SIZE - index_bits - byte_offset_bits;
+    printf("byte_offset_bits: %u, index_bits: %u, tag_bits: %u\n",
+           byte_offset_bits, index_bits, tag_bits);
+    assert(tag_bits + index_bits + byte_offset_bits == ADDR_SIZE);
+    memory_stats_init(arch_state_ptr, tag_bits);  // <-- fill number of tag bits
+    allocate_cache(NUM_BLOCKS);
   }
 }
 
