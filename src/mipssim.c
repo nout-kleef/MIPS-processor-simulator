@@ -10,8 +10,6 @@
 // extend instruction types specified in mipssim.h
 #define I_TYPE 2
 #define J_TYPE 3
-#define MEM_TYPE 4
-#define BRANCH_TYPE 5
 
 #define BREAK_POINT 200000 // exit after so many cycles -- useful for debugging
 
@@ -27,16 +25,16 @@ static inline uint8_t get_instruction_type(int opcode)
     switch (opcode)
     {
     /// opcodes are defined in mipssim.h
-    case SPECIAL:
+    case SPECIAL: // ADD, SLT
         return R_TYPE;
     case ADDI:
         return I_TYPE;
     case LW:
-        return MEM_TYPE;
+        return I_TYPE;
     case SW:
-        return MEM_TYPE;
+        return I_TYPE;
     case BEQ:
-        return BRANCH_TYPE;
+        return I_TYPE;
     case J:
         return J_TYPE;
     case SLT:
@@ -44,9 +42,9 @@ static inline uint8_t get_instruction_type(int opcode)
     case EOP:
         return EOP_TYPE;
     default:
-        assert(false);
+        assert(false && "invalid opcode in 'get_instruction_type'");
     }
-    assert(false);
+    // assert(false);
 }
 
 void FSM()
@@ -59,48 +57,70 @@ void FSM()
 
     int opcode = IR_meta->opcode;
     int state = arch_state.state;
+
     switch (state)
     {
-    case INSTR_FETCH:
-        control->MemRead = 1;
-        control->ALUSrcA = 0;
-        control->IorD = 0;
-        control->IRWrite = 1;
-        control->ALUSrcB = 1;
-        control->ALUOp = 0;
-        control->PCWrite = 1;
-        control->PCSource = 0;
+    case INSTR_FETCH: // get the instruction from memory
+        // update control
+        arch_state.control.PCWrite = 1;  // prepare for PC+4
+        arch_state.control.PCSource = 0; // ALU result
+        arch_state.control.MemRead = 1;
+        arch_state.control.IorD = 0; // PC
+        arch_state.control.IRWrite = 1;
+        arch_state.control.ALUOp = 0;   // add - TODO ???
+        arch_state.control.ALUSrcA = 0; // PC
+        arch_state.control.ALUSrcB = 1; // WORD_SIZE (4)
+        // update state
         state = DECODE;
         break;
     case DECODE:
-        control->ALUSrcA = 0;
-        control->ALUSrcB = 3;
-        control->ALUOp = 0;
-        switch (IR_meta->type)
+        // update control
+        arch_state.control.ALUSrcA = 0; // PC+4
+        arch_state.control.ALUSrcB = 3; // shifted (sign extended) immediate
+        arch_state.control.ALUOp = 0;   // add - TODO ??? optimistically compute branch addr
+        // update state
+        switch (get_instruction_type(opcode))
         {
         case R_TYPE:
             state = EXEC;
             break;
+        case I_TYPE:
+            if (opcode == LW || opcode == SW)
+            {
+                state = MEM_ADDR_COMP;
+            }
+            else if (opcode == ADDI)
+            {
+                state = I_TYPE_EXEC;
+            }
+            else if (opcode == BEQ)
+            {
+                state = BRANCH_COMPL;
+            }
+            else
+            {
+                assert(false && "invalid opcode for I_TYPE in DECODE state");
+            }
+            break;
         case J_TYPE:
             state = JUMP_COMPL;
             break;
-        case MEM_TYPE:
-            state = MEM_ADDR_COMP;
-            break;
-        case BRANCH_TYPE:
-            state = BRANCH_COMPL;
-            break;
-        case EOP:
+        case EOP_TYPE:
             state = EXIT_STATE;
             break;
         default:
-            assert(false);
+            assert(false && "invalid instruction type");
         }
         break;
+    case EXIT_STATE:
+        // TODO ???
+        break;
     case MEM_ADDR_COMP:
-        control->ALUSrcA = 1;
-        control->ALUSrcB = 2;
-        control->ALUOp = 0;
+        // update control
+        arch_state.control.ALUSrcA = 1; // pipe reg A ($rs)
+        arch_state.control.ALUSrcB = 2; // (sign extended) immediate
+        arch_state.control.ALUOp = 0;   // add - TODO ???
+        // update state
         switch (opcode)
         {
         case LW:
@@ -110,52 +130,85 @@ void FSM()
             state = MEM_ACCESS_ST;
             break;
         default:
-            assert(false);
+            assert(false && "invalid opcode in MEM_ADDR_COMP");
         }
         break;
     case MEM_ACCESS_LD:
-        control->MemRead = 1;
-        control->IorD = 1;
+        // update control
+        arch_state.control.MemRead = 1;
+        arch_state.control.IorD = 1; // ALUout ($rs + immediate)
+        // update state
         state = WB_STEP;
         break;
     case MEM_ACCESS_ST:
-        control->MemWrite = 1;
-        control->IorD = 1;
+        // update control
+        arch_state.control.MemWrite = 1;
+        arch_state.control.IorD = 1; // ALUout ($rs + immediate)
+        // update state
         state = INSTR_FETCH;
         break;
     case WB_STEP:
-        control->RegDst = 0;
-        control->RegWrite = 1;
-        control->MemtoReg = 1;
+        // update control
+        arch_state.control.RegDst = 0; // IR[16-20] ($rt)
+        arch_state.control.RegWrite = 1;
+        arch_state.control.MemtoReg = 1; // pipe reg MDR (mem[$rs + immediate])
+        // update state
+        state = INSTR_FETCH;
         break;
     case EXEC:
-        control->ALUSrcA = 1;
-        control->ALUSrcB = 0;
-        control->ALUOp = 2;
+        // update control
+        arch_state.control.ALUSrcA = 1; // pipe reg A ($rs)
+        arch_state.control.ALUSrcB = 0; // pipe reg B ($rt)
+        // TODO switch function
+        arch_state.control.ALUOp = 2; // add - TODO ???
+        // update state
         state = R_TYPE_COMPL;
         break;
     case R_TYPE_COMPL:
-        control->RegDst = 1;
-        control->RegWrite = 1;
-        control->MemtoReg = 0;
+        // update control
+        arch_state.control.RegDst = 1; // IR[11-15] ($rd)
+        arch_state.control.RegWrite = 1;
+        arch_state.control.MemtoReg = 0; // ALUOut (ADD: $rs + $rt, SLT: ???)
+        // update state
+        state = INSTR_FETCH;
+        break;
+    case I_TYPE_EXEC:
+        // update control
+        arch_state.control.ALUSrcA = 1; // pipe reg A ($rs)
+        arch_state.control.ALUSrcB = 2; // (sign extended) immediate
+        arch_state.control.ALUOp = 2;   // add - TODO ???
+        // update state
+        state = I_TYPE_COMPL;
+        break;
+    case I_TYPE_COMPL:
+        // update control
+        arch_state.control.RegDst = 0; // IR[16-20] ($rt)
+        arch_state.control.RegWrite = 1;
+        arch_state.control.MemtoReg = 0; // pipe reg ALUOut
+        // update state
         state = INSTR_FETCH;
         break;
     case BRANCH_COMPL:
-        control->ALUSrcA = 1;
-        control->ALUSrcB = 0;
-        control->ALUOp = 1;
-        control->PCWriteCond = 1;
-        control->PCSource = 1;
+        // update control
+        arch_state.control.PCWriteCond = 1; // AND this with "zero bit"
+        arch_state.control.ALUSrcA = 1;     // pipe reg A ($rs)
+        arch_state.control.ALUSrcB = 0;     // pipe reg B ($rt)
+        arch_state.control.ALUOp = 1;       // subtract - TODO ???
+        arch_state.control.PCSource = 1;    // pipe reg ALUOut (PC+4 + imm<<2)
+        // update state
         state = INSTR_FETCH;
         break;
     case JUMP_COMPL:
-        control->PCWrite = 1;
-        control->PCSource = 2;
+        // update control
+        arch_state.control.PCSource = 2; // PC+4[31-28] (+) target<<2
+        arch_state.control.PCWrite = 1;
+        // update state
         state = INSTR_FETCH;
         break;
     default:
-        assert(false);
+        assert(false && "invalid state (current)");
     }
+
     arch_state.state = state;
 }
 
@@ -197,6 +250,9 @@ void execute()
     case 1:
         alu_opB = WORD_SIZE;
         break;
+    case 2:
+        alu_opB = immediate;
+        break;
     case 3:
         alu_opB = shifted_immediate;
         break;
@@ -210,10 +266,7 @@ void execute()
         next_pipe_regs->ALUOut = alu_opA + alu_opB;
         break;
     case 2:
-        if (IR_meta->function == ADD)
-            next_pipe_regs->ALUOut = alu_opA + alu_opB;
-        else
-            assert(false);
+        next_pipe_regs->ALUOut = alu_opA + alu_opB;
         break;
     default:
         assert(false);
@@ -239,7 +292,7 @@ void write_back()
 {
     if (arch_state.control.RegWrite)
     {
-        int write_reg_id = arch_state.IR_meta.reg_11_15;
+        int write_reg_id = arch_state.control.RegDst ? arch_state.IR_meta.reg_11_15 : arch_state.IR_meta.reg_16_20;
         check_is_valid_reg_id(write_reg_id);
         int write_data = arch_state.curr_pipe_regs.ALUOut;
         if (write_reg_id > 0)
