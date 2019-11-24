@@ -262,6 +262,7 @@ void execute() {
       break;
     case 1:  // subtraction
       next_pipe_regs->ALUOut = alu_opA - alu_opB;
+      break;
     case 2:  // R_TYPE ONLY!!
       switch (IR_meta->function) {
         case ADD:
@@ -416,10 +417,11 @@ void set_up_IR_meta(int IR, struct instr_meta *IR_meta) {
              IR_meta->immediate + IR_meta->reg_21_25, IR_meta->reg_16_20);
       break;
     case BEQ:
-      printf("Executing BEQ(%d), $%u == $%u \n--> %d\nelse -->  %d\n",
+      printf("Executing BEQ(%d), $%u == $%u --> %d (%d)\nelse -->  %d (%d)\n",
              IR_meta->opcode, IR_meta->reg_21_25, IR_meta->reg_16_20,
              arch_state.curr_pipe_regs.pc + (IR_meta->immediate << 2),
-             arch_state.next_pipe_regs.pc);
+             (arch_state.curr_pipe_regs.pc + (IR_meta->immediate << 2)) / 4,
+             arch_state.next_pipe_regs.pc, arch_state.next_pipe_regs.pc / 4);
       break;
     case J:
       printf("Executing J(%d), $pc = %u", IR_meta->opcode,
@@ -449,7 +451,8 @@ void assign_pipeline_registers_for_the_next_cycle() {
   curr_pipe_regs->A = next_pipe_regs->A;
   curr_pipe_regs->B = next_pipe_regs->B;
   curr_pipe_regs->MDR = next_pipe_regs->MDR;
-  if (control->PCWrite) {
+  if (control->PCWrite ||
+      (control->PCWriteCond && curr_pipe_regs->ALUOut == 0)) {
     check_address_is_word_aligned(next_pipe_regs->pc);
     curr_pipe_regs->pc = next_pipe_regs->pc;
   }
