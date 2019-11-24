@@ -337,16 +337,41 @@ void write_back()
 {
     if (arch_state.control.RegWrite)
     {
-        int write_reg_id = arch_state.control.RegDst ? arch_state.IR_meta.reg_11_15 : arch_state.IR_meta.reg_16_20;
+        int write_reg_id = 0;
+        int write_data = 0;
+        switch (arch_state.control.RegDst)
+        {
+        case 0:
+            write_reg_id = arch_state.IR_meta.reg_16_20;
+            break;
+        case 1:
+            write_reg_id = arch_state.IR_meta.reg_11_15;
+            break;
+        default:
+            assert(false && "invalid RegDst control line");
+        }
+        switch (arch_state.control.MemtoReg)
+        {
+        case 0: // R_TYPE or ADDI completion
+            write_data = arch_state.curr_pipe_regs.ALUOut;
+            break;
+        case 1: // LW or SW completion
+            write_data = arch_state.curr_pipe_regs.MDR;
+            break;
+        default:
+            assert(false && "invalid MemtoReg control line");
+        }
         check_is_valid_reg_id(write_reg_id);
-        int write_data = arch_state.curr_pipe_regs.ALUOut;
         if (write_reg_id > 0)
         {
             arch_state.registers[write_reg_id] = write_data;
-            //printf("Reg $%u = %d \n", write_reg_id, write_data);
+            printf("Reg $%u = %d (from current %s)\n",
+                   write_reg_id, write_data, arch_state.control.MemtoReg ? "MDR" : "ALUOut");
         }
         else
+        {
             printf("Attempting to write reg_0. That is likely a mistake \n");
+        }
     }
 }
 
@@ -421,6 +446,7 @@ void assign_pipeline_registers_for_the_next_cycle()
     curr_pipe_regs->ALUOut = next_pipe_regs->ALUOut;
     curr_pipe_regs->A = next_pipe_regs->A;
     curr_pipe_regs->B = next_pipe_regs->B;
+    curr_pipe_regs->MDR = next_pipe_regs->MDR;
     if (control->PCWrite)
     {
         check_address_is_word_aligned(next_pipe_regs->pc);
