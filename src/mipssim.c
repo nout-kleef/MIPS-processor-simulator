@@ -316,19 +316,43 @@ void execute()
     }
 }
 
-void memory_access()
-{
-    assert(arch_state.control.IorD == 1 && "IorD should be 1 for LW/SW");
+void memory_access() {
+  // assert(arch_state.control.IorD == 1 && "IorD should be 1 for LW/SW");
     // read
-    if (arch_state.control.MemRead)
-    {
-        assert(!arch_state.control.MemWrite && "don't read and write simultaneously");
-        arch_state.next_pipe_regs.MDR = memory_read(arch_state.curr_pipe_regs.ALUOut);
+  if (arch_state.control.MemRead) {
+    assert(!arch_state.control.MemWrite &&
+           "don't read and write simultaneously");
+    switch (arch_state.control.IorD) {
+      case 0:
+        // useless, but whatever
+        arch_state.next_pipe_regs.MDR =
+            memory_read(arch_state.curr_pipe_regs.pc);
+        break;
+      case 1:
+        arch_state.next_pipe_regs.MDR =
+            memory_read(arch_state.curr_pipe_regs.ALUOut);
+        break;
+      default:
+        assert(false && "invalid IorD control line during MemRead");
+    }
     }
     // write
-    if (arch_state.control.MemWrite)
-    {
-        assert(!arch_state.control.MemRead && "don't read and write simultaneously");
+  if (arch_state.control.MemWrite) {
+    assert(!arch_state.control.MemRead &&
+           "don't read and write simultaneously");
+    switch (arch_state.control.IorD) {
+      case 0:
+        // useless, but whatever
+        printf("Writing to memory while IorD == 0... You sure?\n");
+        memory_write(arch_state.curr_pipe_regs.pc, arch_state.curr_pipe_regs.B);
+        break;
+      case 1:
+        memory_write(arch_state.curr_pipe_regs.ALUOut,
+                     arch_state.curr_pipe_regs.B);
+        break;
+      default:
+        assert(false && "invalid IorD control line during MemWrite");
+    }
         memory_write(arch_state.curr_pipe_regs.ALUOut, arch_state.curr_pipe_regs.B);
     }
 }
