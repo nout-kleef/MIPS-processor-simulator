@@ -1,0 +1,330 @@
+file opened. starting marking process..
+#######################################
+
+
+*** CYCLE #0 START ***
+state:					DECODE
+clock cycle				0
+instruction				0
+|	opcode (31-26)		8 - ADDI
+|	jmp (25-0)			2359346
+|	|	$rs (25-21)		1
+|	|	$rt (20-16)		4
+|	|	imm (15-0)		50
+|	|	|	$rd (15-11)	0
+|	|	|	funct (5-0)	50
+register file (updated only)
+|	reg 0:				0
+|	reg 1:				-720
+|	reg 2:				7000
+|	reg 3:				-11
+|	reg 4:				0
+|	reg 5:				0
+|	reg 6:				0
+|	reg 7:				0
+|	reg 8:				0
+|	reg 9:				0
+|	reg 10:				0
+|	reg 11:				0
+|	reg 12:				0
+|	reg 13:				0
+|	reg 14:				0
+|	reg 15:				0
+|	reg 16:				0
+|	reg 17:				0
+|	reg 18:				0
+|	reg 19:				0
+|	reg 20:				0
+|	reg 21:				0
+|	reg 22:				0
+|	reg 23:				0
+|	reg 24:				0
+|	reg 25:				0
+|	reg 26:				0
+|	reg 27:				0
+|	reg 28:				0
+|	reg 29:				0
+|	reg 30:				0
+|	reg 31:				0
+pipe registers (current)
+|	PC					4
+|	IR					539230258
+|	A					0
+|	B					0
+|	ALUOut				4
+|	MDR					0
+*** CYCLE ENDED ***
+
+
+*** CYCLE #1 START ***
+state:					I_TYPE_EXEC
+clock cycle				1
+instruction				0
+|	opcode (31-26)		8 - ADDI
+|	jmp (25-0)			2359346
+|	|	$rs (25-21)		1
+|	|	$rt (20-16)		4
+|	|	imm (15-0)		50
+|	|	|	$rd (15-11)	0
+|	|	|	funct (5-0)	50
+register file (updated only)
+pipe registers (current)
+|	PC					4
+|	IR					539230258
+|	A					-720
+|	B					0
+|	ALUOut				204
+|	MDR					0
+*** CYCLE ENDED ***
+
+
+*** CYCLE #2 START ***
+state:					INSTR_FETCH
+clock cycle				2
+instruction				0
+|	opcode (31-26)		8 - ADDI
+|	jmp (25-0)			2359346
+|	|	$rs (25-21)		1
+|	|	$rt (20-16)		4
+|	|	imm (15-0)		50
+|	|	|	$rd (15-11)	0
+|	|	|	funct (5-0)	50
+register file (updated only)
+|	reg 4:				-670
+pipe registers (current)
+|	PC					4
+|	IR					539230258
+|	A					-720
+|	B					0
+|	ALUOut				-670
+|	MDR					0
+*** CYCLE ENDED ***
+
+
+*** CYCLE #3 START ***
+state:					DECODE
+clock cycle				3
+instruction				0
+|	opcode (31-26)		0 - SPECIAL/ADD
+|	jmp (25-0)			4464672
+|	|	$rs (25-21)		2
+|	|	$rt (20-16)		4
+|	|	imm (15-0)		8224
+|	|	|	$rd (15-11)	4
+|	|	|	funct (5-0)	32
+register file (updated only)
+pipe registers (current)
+|	PC					8
+|	IR					4464672
+|	A					-720
+|	B					204
+|	ALUOut				8
+|	MDR					0
+*** CYCLE ENDED ***
+
+
+*** CYCLE #4 START ***
+state:					EXEC
+clock cycle				4
+instruction				0
+|	opcode (31-26)		0 - SPECIAL/ADD
+|	jmp (25-0)			4464672
+|	|	$rs (25-21)		2
+|	|	$rt (20-16)		4
+|	|	imm (15-0)		8224
+|	|	|	$rd (15-11)	4
+|	|	|	funct (5-0)	32
+register file (updated only)
+pipe registers (current)
+|	PC					8
+|	IR					4464672
+|	A					7000
+|	B					204
+|	ALUOut				32904
+|	MDR					0
+*** CYCLE ENDED ***
+
+
+*** CYCLE #5 START ***
+state:					R_TYPE_COMPL
+clock cycle				5
+instruction				0
+|	opcode (31-26)		0 - SPECIAL/ADD
+|	jmp (25-0)			4464672
+|	|	$rs (25-21)		2
+|	|	$rt (20-16)		4
+|	|	imm (15-0)		8224
+|	|	|	$rd (15-11)	4
+|	|	|	funct (5-0)	32
+register file (updated only)
+pipe registers (current)
+|	PC					8
+|	IR					4464672
+|	A					7000
+|	B					204
+|	ALUOut				7204
+|	MDR					0
+*** CYCLE ENDED ***
+
+
+*** CYCLE #6 START ***
+state:					INSTR_FETCH
+clock cycle				6
+instruction				0
+|	opcode (31-26)		0 - SPECIAL/ADD
+|	jmp (25-0)			4464672
+|	|	$rs (25-21)		2
+|	|	$rt (20-16)		4
+|	|	imm (15-0)		8224
+|	|	|	$rd (15-11)	4
+|	|	|	funct (5-0)	32
+register file (updated only)
+|	reg 4:				7204
+pipe registers (current)
+|	PC					8
+|	IR					4464672
+|	A					7000
+|	B					204
+|	ALUOut				212
+|	MDR					0
+*** CYCLE ENDED ***
+
+
+*** CYCLE #7 START ***
+state:					DECODE
+clock cycle				7
+instruction				0
+|	opcode (31-26)		8 - ADDI
+|	jmp (25-0)			6422317
+|	|	$rs (25-21)		3
+|	|	$rt (20-16)		1
+|	|	imm (15-0)		-211
+|	|	|	$rd (15-11)	31
+|	|	|	funct (5-0)	45
+register file (updated only)
+pipe registers (current)
+|	PC					12
+|	IR					543293229
+|	A					7000
+|	B					7204
+|	ALUOut				12
+|	MDR					0
+*** CYCLE ENDED ***
+
+
+*** CYCLE #8 START ***
+state:					I_TYPE_EXEC
+clock cycle				8
+instruction				0
+|	opcode (31-26)		8 - ADDI
+|	jmp (25-0)			6422317
+|	|	$rs (25-21)		3
+|	|	$rt (20-16)		1
+|	|	imm (15-0)		-211
+|	|	|	$rd (15-11)	31
+|	|	|	funct (5-0)	45
+register file (updated only)
+pipe registers (current)
+|	PC					12
+|	IR					543293229
+|	A					-11
+|	B					-720
+|	ALUOut				-832
+|	MDR					0
+*** CYCLE ENDED ***
+
+
+*** CYCLE #9 START ***
+state:					INSTR_FETCH
+clock cycle				9
+instruction				0
+|	opcode (31-26)		8 - ADDI
+|	jmp (25-0)			6422317
+|	|	$rs (25-21)		3
+|	|	$rt (20-16)		1
+|	|	imm (15-0)		-211
+|	|	|	$rd (15-11)	31
+|	|	|	funct (5-0)	45
+register file (updated only)
+|	reg 1:				-832
+pipe registers (current)
+|	PC					12
+|	IR					543293229
+|	A					-11
+|	B					-720
+|	ALUOut				-222
+|	MDR					0
+*** CYCLE ENDED ***
+
+
+*** CYCLE #10 START ***
+state:					DECODE
+clock cycle				10
+instruction				0
+|	opcode (31-26)		63 - EOP
+|	jmp (25-0)			24383562
+|	|	$rs (25-21)		11
+|	|	$rt (20-16)		20
+|	|	imm (15-0)		4170
+|	|	|	$rd (15-11)	2
+|	|	|	funct (5-0)	10
+register file (updated only)
+pipe registers (current)
+|	PC					16
+|	IR					-42725302
+|	A					-11
+|	B					-832
+|	ALUOut				16
+|	MDR					0
+*** CYCLE ENDED ***
+
+
+*** CYCLE #11 START ***
+state:					EXIT_STATE
+clock cycle				11
+instruction				0
+|	opcode (31-26)		63 - EOP
+|	jmp (25-0)			24383562
+|	|	$rs (25-21)		11
+|	|	$rt (20-16)		20
+|	|	imm (15-0)		4170
+|	|	|	$rd (15-11)	2
+|	|	|	funct (5-0)	10
+register file (updated only)
+pipe registers (current)
+|	PC					16
+|	IR					-42725302
+|	A					0
+|	B					0
+|	ALUOut				16696
+|	MDR					0
+*** CYCLE ENDED ***
+
+
+*** CYCLE #12 START ***
+state:					EXIT_STATE
+clock cycle				12
+instruction				0
+|	opcode (31-26)		63 - EOP
+|	jmp (25-0)			24383562
+|	|	$rs (25-21)		11
+|	|	$rt (20-16)		20
+|	|	imm (15-0)		4170
+|	|	|	$rd (15-11)	2
+|	|	|	funct (5-0)	10
+register file (updated only)
+pipe registers (current)
+|	PC					16
+|	IR					-42725302
+|	A					0
+|	B					0
+|	ALUOut				16696
+|	MDR					0
+memory (only non-zero values)
+|	addr 0(0)			539230258 (instr)
+|	addr 4(0)			4464672 (instr)
+|	addr 8(0)			543293229 (instr)
+|	addr 12(0)			-42725302 (instr)
+|	addr 16(0)			1431655765 (data)
+|	addr 20(0)			1162941781 (data)
+*** CYCLE ENDED ***
