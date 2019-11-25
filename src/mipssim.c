@@ -201,8 +201,8 @@ void FSM() {
 }
 
 void instruction_fetch() {
-  if (arch_state.control.MemRead) {
-    // assert(arch_state.control.IorD == 0 && "IorD should be 0");
+  if (arch_state.control.MemRead && arch_state.control.IorD == 0) {
+    assert(arch_state.control.IorD == 0 && "IorD should be 0");
     int address = arch_state.curr_pipe_regs.pc;
     arch_state.next_pipe_regs.IR = memory_read(address);
   }
@@ -302,7 +302,7 @@ void execute() {
 void memory_access() {
   // assert(arch_state.control.IorD == 1 && "IorD should be 1 for LW/SW");
   // read
-  if (arch_state.control.MemRead) {
+  if (arch_state.control.MemRead && arch_state.control.IorD == 1) {
     assert(!arch_state.control.MemWrite &&
            "don't read and write simultaneously");
     switch (arch_state.control.IorD) {
@@ -336,7 +336,8 @@ void memory_access() {
       default:
         assert(false && "invalid IorD control line during MemWrite");
     }
-    memory_write(arch_state.curr_pipe_regs.ALUOut, arch_state.curr_pipe_regs.B);
+    // memory_write(arch_state.curr_pipe_regs.ALUOut,
+    // arch_state.curr_pipe_regs.B);
   }
 }
 
