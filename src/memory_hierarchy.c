@@ -112,8 +112,9 @@ int memory_read(const int address) {
     } else {
       // MISS!
       fetch_block_into_cache(address, &decomp);
-      // flag that this block is now valid for future memory accesses
+      // flag the status of this newly fetched block
       block->valid = 1;
+      block->tag = decomp.tag;
     }
     // regardless of hit/miss, this cache block now contains our data.
     return block->words[decomp.byte_offset / BYTES_IN_ADDR];
