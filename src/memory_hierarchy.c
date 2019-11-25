@@ -115,7 +115,7 @@ int memory_read(const int address) {
       // flag that this block is now valid for future memory accesses
       block->valid = 1;
     }
-    // regardless of hit/miss, this block now contains our data.
+    // regardless of hit/miss, this cache block now contains our data.
     return block->words[decomp.byte_offset / BYTES_IN_ADDR];
   }
 }
@@ -130,10 +130,16 @@ void memory_write(int address, int write_data) {
     arch_state.memory[address / BYTES_IN_ADDR] = (uint32_t)write_data;
   } else {
     // CACHE ENABLED
-    assert(0);  /// @students: Remove assert(0); and implement Memory hierarchy
-                /// w/ cache
+    addr_decomposition decomp;
+    decomp = *(decompose(address, &decomp));
+    cache_entry* block = &cache[decomp.index];
 
-    /// @students: your implementation must properly increment:
-    /// arch_state_ptr->mem_stats.sw_cache_hits
+    if (block->valid && block->tag == decomp.tag) {
+      // HIT! write to cache
+      arch_state.mem_stats.sw_cache_hits++;
+      block->words[decomp.byte_offset / BYTES_IN_ADDR] = (uint32_t)write_data;
+    }  // else: do nothing (write-no-allocate)
+    // write to main memory; we ALWAYS do this (write-through)
+    arch_state.memory[address / BYTES_IN_ADDR] = (uint32_t)write_data;
   }
 }
