@@ -48,6 +48,8 @@ char *get_instr_type_name(struct instr_meta IR) {
       switch (IR.function) {
         case 32:
           return "SPECIAL/ADD";
+        case 42:
+          return "SPECIAL/SLT";
         default:
           assert(false);
       }
