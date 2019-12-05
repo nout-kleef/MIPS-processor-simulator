@@ -11,6 +11,7 @@ The C program simulates the following instruction for a multi-cycle MIPS process
 * BQE
 * SLT
 
+![](MIPS-multi-cycle.PNG)
 
 ## credit
 Instructor: Boris Grot
